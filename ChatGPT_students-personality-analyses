@@ -1,0 +1,129 @@
+#data available in OSF Open Science Framework 
+#dane <- read.csv2()
+#dane
+
+
+#użyte pakiety
+library(dplyr)
+library(e1071)
+library(rstatix)
+library(psych)
+library(DescTools)
+
+is.numeric(dane$Internet_daily_H)
+class(dane$Internet_daily_H)
+dane$Internet_daily_H <- as.numeric(dane$Internet_daily_H)
+
+
+###liczności###
+
+#etniczność
+ethnicity_frequency_table <- dane %>%
+  group_by(Ethnicity) %>%
+  summarise (n = n()) %>%
+  arrange(desc(n)) %>%
+  mutate(freq = n / sum(n)*100)
+
+ethnicity_frequency_table
+
+#edukacja
+education_frequency_table <- dane %>%
+  group_by(Level.of.received.education) %>%
+  summarise (n = n()) %>%
+  arrange(desc(n)) %>%
+  mutate(freq = n / sum(n)*100)
+
+education_frequency_table 
+
+#miejsce zamieszkania
+place_of_living_frequency_table <- dane %>%
+  group_by(Place.of.living) %>%
+  summarise (n = n()) %>%
+  arrange(desc(n)) %>%
+  mutate(freq = n / sum(n)*100)
+
+place_of_living_frequency_table
+
+#płeć
+gender_frequency_table <- dane %>%
+  group_by(Gender) %>%
+  summarise (n = n()) %>%
+  arrange(desc(n)) %>%
+  mutate(freq = n / sum(n)*100)
+
+gender_frequency_table 
+
+###filtr n = 191###
+#znają czat?
+filtr1 <- dane$Familiar_with_chat == "1"
+tylko_znający_chat <- dane[filtr1,]
+
+#średnie
+srednie <- data.frame(TIPI_E = mean(tylko_znający_chat$TIPI_EXTRAVERITION), TIPI_A = mean(tylko_znający_chat$TIPI_AGREEABLENESS),
+                      TIPI_O = mean(tylko_znający_chat$TIPI_OPENESS_TO_EXPERIENCE), TIPI_ES = mean(tylko_znający_chat$TIPI_EMOTIONAL_STABILITY),
+                      TIPI_C = mean(tylko_znający_chat$TIPI_CONSCIENTOUSNESS), SIMIS_I = mean(tylko_znający_chat$ETHICS_INTERNALIZATION_SCORE),
+                      SIMI_S = mean(tylko_znający_chat$ETHICS_SYMBOLIZATION_SCORE), Age = mean(tylko_znający_chat$Age), 
+                      Internet = mean(tylko_znający_chat$Internet_daily_H))
+srednie
+
+#odchylenia
+odchylenia <- data.frame(TIPI_E = sd(tylko_znający_chat$TIPI_EXTRAVERITION), TIPI_A = sd(tylko_znający_chat$TIPI_AGREEABLENESS),
+                      TIPI_O = sd(tylko_znający_chat$TIPI_OPENESS_TO_EXPERIENCE), TIPI_ES = sd(tylko_znający_chat$TIPI_EMOTIONAL_STABILITY),
+                      TIPI_C = sd(tylko_znający_chat$TIPI_CONSCIENTOUSNESS), SIMIS_I = sd(tylko_znający_chat$ETHICS_INTERNALIZATION_SCORE),
+                      SIMI_S = sd(tylko_znający_chat$ETHICS_SYMBOLIZATION_SCORE), Age = sd(tylko_znający_chat$Age), 
+                      Internet = sd(tylko_znający_chat$Internet_daily_H))
+
+odchylenia
+
+#skośność
+skosnosc <- data.frame(TIPI_E = skewness(tylko_znający_chat$TIPI_EXTRAVERITION), TIPI_A = skewness(tylko_znający_chat$TIPI_AGREEABLENESS),
+                      TIPI_O = skewness(tylko_znający_chat$TIPI_OPENESS_TO_EXPERIENCE), TIPI_ES = skewness(tylko_znający_chat$TIPI_EMOTIONAL_STABILITY),
+                      TIPI_C = skewness(tylko_znający_chat$TIPI_CONSCIENTOUSNESS), SIMIS_I = skewness(tylko_znający_chat$ETHICS_INTERNALIZATION_SCORE),
+                      SIMI_S = skewness(tylko_znający_chat$ETHICS_SYMBOLIZATION_SCORE), Age = skewness(tylko_znający_chat$Age), 
+                      Internet = skewness(tylko_znający_chat$Internet_daily_H))
+
+skosnosc
+
+#kurtoza
+kurtoza <- data.frame(TIPI_E = kurtosis(tylko_znający_chat$TIPI_EXTRAVERITION), TIPI_A = kurtosis(tylko_znający_chat$TIPI_AGREEABLENESS),
+                       TIPI_O = kurtosis(tylko_znający_chat$TIPI_OPENESS_TO_EXPERIENCE), TIPI_ES = kurtosis(tylko_znający_chat$TIPI_EMOTIONAL_STABILITY),
+                       TIPI_C = kurtosis(tylko_znający_chat$TIPI_CONSCIENTOUSNESS), SIMIS_I = kurtosis(tylko_znający_chat$ETHICS_INTERNALIZATION_SCORE),
+                       SIMI_S = kurtosis(tylko_znający_chat$ETHICS_SYMBOLIZATION_SCORE), Age = kurtosis(tylko_znający_chat$Age), 
+                       Internet = kurtosis(tylko_znający_chat$Internet_daily_H))
+
+kurtoza
+
+#przygotowanie zmiennych
+zmienne_w_analizach <- data.frame(TIPI_E = tylko_znający_chat$TIPI_EXTRAVERITION, TIPI_ES = tylko_znający_chat$TIPI_EMOTIONAL_STABILITY,
+                        TIPI_O = tylko_znający_chat$TIPI_OPENESS_TO_EXPERIENCE, TIPI_A = tylko_znający_chat$TIPI_AGREEABLENESS,
+                        TIPI_C = tylko_znający_chat$TIPI_CONSCIENTOUSNESS, SIMIS_I = tylko_znający_chat$ETHICS_INTERNALIZATION_SCORE,
+                        SIMIS_S = tylko_znający_chat$ETHICS_SYMBOLIZATION_SCORE, Age = tylko_znający_chat$Age,
+                        Internet = tylko_znający_chat$Internet_daily_H, Chat = tylko_znający_chat$Written_assigment) 
+
+#tabela descriptives z wykorzystaniem psych
+describe(zmienne_w_analizach)
+
+
+#korelacja
+korelacja_Pearsona <- cor.test(zmienne_w_analizach)
+round(korelacja_Pearsona, digits = 3)
+
+#koralcja inną metodą (z wykorzystaniem rstatixs - podświetlone korelacje ujemne, druga tabela daje p-value)
+korelacja2 <- cor_mat(zmienne_w_analizach) 
+
+p_value <- korelacja2 %>%
+  cor_get_pval()
+
+#Model regresji liniowej
+LM_ChatGPT = lm(formula=Chat~TIPI_E+TIPI_ES+TIPI_O+TIPI_A+TIPI_C+SIMIS_I+SIMIS_S+Age+Internet, data = zmienne_w_analizach)
+LM_ChatGPT
+summary(LM_ChatGPT)
+
+#Binomial regressin model
+BRM_CHatGPT <- glm(formula=Chat~TIPI_E+TIPI_ES+TIPI_O+TIPI_A+TIPI_C+SIMIS_I+SIMIS_S+Age+Internet, data = zmienne_w_analizach, family = "binomial")
+summary(BRM_CHatGPT)
+#R2 McFadden
+PseudoR2(BRM_CHatGPT)
+#Odds ratio
+exp(coef(BRM_CHatGPT))
+
