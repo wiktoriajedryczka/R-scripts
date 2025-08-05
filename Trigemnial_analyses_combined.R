@@ -1,4 +1,7 @@
-#Parts of the code were supported with ChatGPT (2025). 
+#Parts of the following code were partially generated with the assistance of artificial intelligence (AI)
+#to enhance efficiency, ensure correctness, and improve readability and usability. Only technical code 
+#components (e.g., syntax, structure) were AI-assisted; no data, results, or interpretations were generated, 
+#modified, or influenced by AI. #All analyses and conclusions were conducted independently.
 
 #### NOTE
 #Item codes are as follows - R8 (item 1 in the original questionnaire), 
@@ -2122,3 +2125,4 @@ dens_2 <- ggplot(data_final_model, aes(x = trigeminal_score_8_items, fill = sex_
   theme_minimal()
 
 dens_1 + dens_2
+
