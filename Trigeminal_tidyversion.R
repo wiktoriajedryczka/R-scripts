@@ -25,9 +25,10 @@ data$covid <- data$Have.you.already.had.Covid.
 
 
 final_model <- 'f1 =~ R10 + R14 + R15 + R16 + R17 + R18 + R19 + R21'
+data$trigeminal_score_8_items
 
 data_final_model <- data %>%
-  select(R10, R14, R15, R16, R17, R18, R19, R21, sex_1f_2m_t) %>%
+  select(R10, R14, R15, R16, R17, R18, R19, R21, sex_1f_2m_t, trigeminal_score_8_items) %>%
   na.omit()
 
 data_filtered <- data %>%
@@ -46,6 +47,9 @@ age_subgroup_healthy <- data_filtered %>%
     covid %in% c("j", "n"),
     sex_1f_2m_t %in% c("female", "male")
   )
+
+items <- data[, c("R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15", "R16", "R17", "R18", 
+                  "R19", "R20", "R21", "R22")]
 
 #packages
 library(psych)
@@ -468,8 +472,17 @@ data %>%
     mean = mean(trigeminal_score_8_items, na.rm = TRUE),
     sd = sd(trigeminal_score_8_items, na.rm = TRUE)
   )
+smell <- quantile(data_filtered$current_smell, probs = c(0.33, 0.66), na.rm = TRUE)
+
+data_filtered$current_smell_group <- cut(
+  data_filtered$current_smell,
+  breaks = c(-Inf, smell[1], smell[2], Inf),
+  labels = c("low", "medium", "high"),
+  include.lowest = TRUE
+)
+
 #extreme terciles
-data_extremes <- data %>%
+data_extremes <- data_filtered %>%
   filter(Lateralization_tercile %in% c("low", "high"))
 
 var.test(trigeminal_score_8_items ~ Lateralization_tercile, data = data_extremes)
@@ -974,7 +987,7 @@ data_extremes <- data_filtered %>%
 cohens_d(trigeminal_score_8_items ~ Current_smell_tercile, data = data_extremes)
 
 #plot
-ggplot(data_extremes, aes(x = Current_smell_tercile, y = trigeminal_score_8_items)) +
+box_2 <- ggplot(data_extremes, aes(x = Current_smell_tercile, y = trigeminal_score_8_items)) +
   geom_boxplot() +
   labs(
     x = "Self rated olfactory function",
@@ -1321,6 +1334,9 @@ ggplot(data_long_nasal_healthy, aes(x = value, y = trigeminal_score_8_items)) +
   theme_minimal()
 
 ########------Patchworked figures for the manuscript--------#####
+#Figure 1
+scree(items2, pc=FALSE)
+
 #Figure 2
 
 #sample : data
@@ -1415,21 +1431,27 @@ plot_green <- ggplot(data_long_nasal, aes(x = value, y = trigeminal_score_8_item
   labs(x = "Value", y = "Trigeminal score") +
   theme_minimal()
 
-
+plot_blue / plot_green
 
 #Figure 3
-box_1 <- ggplot(data_extremes, aes(x = Lateralization_tercile, y = trigeminal_score_8_items)) +
+data_filtered_box_1 <- data_extremes %>%
+  dplyr::filter(Lateralization_tercile %in% c("high", "low"))
+
+box_1 <- ggplot(data_filtered_box_1, aes(x = Lateralization_tercile, y = trigeminal_score_8_items)) +
   geom_boxplot() +
+  geom_jitter(alpha = 0.1) +
   labs(
     x = "Lateralization Tercile",
-    y = "Trigeminal Score",
+    y = "Trigeminal score",
     title = "Trigeminal score by lateralization"
   ) +
+  scale_x_discrete(labels = c("high" = "high", "low" = "low")) +
   scale_y_continuous(limits = c(0, 25)) +
-  geom_jitter(alpha = 0.1) +
-  theme_minimal()
+  theme_minimal() +
+  theme(plot.title = element_text(size = 10))
 
-box_2 <- ggplot(data_extremes, aes(x = current_smell_group, y = trigeminal_score_8_items)) +
+
+box_2 <- ggplot(data_extremes, aes(x = Current_smell_tercile, y = trigeminal_score_8_items)) +
   geom_boxplot() +
   labs(
     x = "Self rated olfactory function",
@@ -1439,7 +1461,8 @@ box_2 <- ggplot(data_extremes, aes(x = current_smell_group, y = trigeminal_score
   scale_x_discrete(labels = c("low" = "poor", "high" = "good")) +
   scale_y_continuous(limits = c(0, 25)) +
   geom_jitter(alpha = 0.1) + 
-  theme_minimal()
+  theme_minimal() +
+  theme(plot.title = element_text(size = 10))
 
 box_1  + box_2
 
